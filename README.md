@@ -86,21 +86,4 @@ python main.py --config configs/default.yaml --coco-path /path/to/coco --resume 
 └── main.py                    # 入口
 ```
 
-## 设计原则
-
-- 所有目标网络权重冻结 (`requires_grad=False`)
-- 正交映射矩阵 `W_orth` 正交初始化 + 冻结
-- JVP 不使用完整雅可比（Hutchinson 迹估计）
-- 梯度隔离检查确保三条控制路径互不交叉
-- AMP bfloat16 + Gradient Checkpointing 控制显存
-
-## 已知限制
-
-- `torch.func.vjp` 对 nn.Module 在大输出维度（LoRA ~7.8M 元素）下数值不稳定，L_smooth 对 LoRA/Query 分支暂不贡献梯度
 - 匈牙利匹配使用 scipy.optimize.linear_sum_assignment
-
-## 参考文献
-
-1. Weight-Manifold Hypothesis: 最优参数 θ* 存在于本征维度 d ≪ P 的可微流形上
-2. RT-DETR: DETRs Beat YOLOs on Real-time Object Detection (CVPR 2024)
-3. Hutchinson Trace Estimator: A stochastic estimator of the trace of an implicit matrix
