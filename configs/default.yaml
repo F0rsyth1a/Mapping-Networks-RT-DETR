@@ -1,0 +1,80 @@
+# ═══════════════════════════════════════════════
+# Mapping Networks + RT-DETR Configuration
+# ═══════════════════════════════════════════════
+
+# --- Latent Space ---
+latent:
+  total_dim: 512
+  d_lora: 256
+  d_film: 128
+  d_query: 128
+
+# --- LoRA Injection ---
+lora:
+  rank: 16
+  inject_backbone_stage4: true
+  inject_backbone_stage5: true
+  inject_aifi_qkv: true
+  inject_decoder_cross_attn: true
+
+# --- Model Architecture ---
+model:
+  backbone: resnet50
+  hidden_dim: 256
+  num_queries: 300
+  num_decoder_layers: 6
+  num_heads: 8
+  num_classes: 80          # COCO
+  backbone_pretrained: true # load ImageNet pretrained weights
+
+# --- Loss Weights ---
+loss:
+  lambda_stab: 0.01
+  lambda_smooth: 0.001
+  lambda_align: 0.1
+  noise_sigma: 0.01        # for stability loss perturbation
+  hutchinson_samples: 1    # number of random vectors for trace estimation
+
+# --- Training Stages ---
+training:
+  stage1:
+    name: "Manifold Discovery"
+    epochs: 5
+    lr: 1.0e-3
+    train_z: true
+    train_modulation: false
+    losses: [task]
+    save_every_epoch: 0
+
+  stage2:
+    name: "Joint Modulation"
+    epochs: 20
+    lr: 5.0e-4
+    train_z: true
+    train_modulation: true
+    losses: [task]
+    save_every_epoch: 5
+
+  stage3:
+    name: "Manifold Solidification"
+    epochs: 10
+    lr: 5.0e-4
+    lr_decay_gamma: 0.95
+    train_z: true
+    train_modulation: true
+    losses: [task, stab, smooth, align]
+    amp: true
+    gradient_checkpointing: true
+    save_every_epoch: 1
+
+# --- Data ---
+data:
+  num_workers: 4
+  batch_size: 2
+  image_size: [640, 640]
+
+# --- Hardware ---
+hardware:
+  device: cuda
+  use_amp: true
+  amp_dtype: bfloat16
